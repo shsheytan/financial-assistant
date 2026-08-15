@@ -6,8 +6,8 @@ updates:
     schedule:
       interval: weekly
     open-pull-requests-limit: 5
-    # Security patches arrive regardless of this grouping; the grouping only
-    # keeps routine version bumps from opening a dozen separate PRs.
+    # Grouping only affects routine version bumps. Security patches are raised
+    # regardless of everything in this file, including the ignores below.
     groups:
       production:
         dependency-type: production
@@ -15,12 +15,29 @@ updates:
       development:
         dependency-type: development
         update-types: ["minor", "patch"]
+    ignore:
+      # The framework version is an architectural decision recorded in PLAN.md,
+      # not a number to keep current automatically. A major bump here changes
+      # the App Router's behaviour and needs a deliberate migration, so let it
+      # be a human decision rather than a PR that looks routine and merges by
+      # habit. Same for the React pair and the matching ESLint config.
+      - dependency-name: next
+        update-types: ["version-update:semver-major"]
+      - dependency-name: eslint-config-next
+        update-types: ["version-update:semver-major"]
+      - dependency-name: react
+        update-types: ["version-update:semver-major"]
+      - dependency-name: react-dom
+        update-types: ["version-update:semver-major"]
+      # Must track the Node version the project targets, not the newest release.
+      - dependency-name: "@types/node"
+        update-types: ["version-update:semver-major"]
     commit-message:
       prefix: "chore"
       include: scope
 
   # Keep the Actions themselves current — a stale third-party action is a
-  # supply-chain risk in its own right.
+  # supply-chain risk in its own right, and these are small, reviewable diffs.
   - package-ecosystem: github-actions
     directory: "/"
     schedule:
