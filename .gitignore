@@ -12,31 +12,70 @@
 
 # testing
 /coverage
+/test-results
+/playwright-report
+/blob-report
+/playwright/.cache
 
 # next.js
 /.next/
 /out/
+.turbo
 
 # production
 /build
 
 # misc
 .DS_Store
-*.pem
+Thumbs.db
 
-# debug
+# ---------------------------------------------------------------------------
+# Secrets. This repo is public — everything below is a hard rule, not a
+# preference. If you need to add a file that looks like a credential, don't.
+# ---------------------------------------------------------------------------
+# Every env file...
+.env*
+# ...except the template, or nobody knows what to fill in.
+!.env.example
+
+# Keys, certificates and credential dumps of any shape.
+*.pem
+*.key
+*.crt
+*.cer
+*.p12
+*.pfx
+*.jks
+*.keystore
+*.asc
+*.gpg
+id_rsa*
+id_ed25519*
+secrets.json
+credentials.json
+service-account*.json
+gha-creds-*.json
+
+# Cloud CLI state
+.vercel
+.netlify
+.firebase
+.aws
+.gcloud
+
+# debug logs
+*.log
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
 
-# env files (can opt-in for committing if needed)
-.env*
-# ...but the template must be committed, or nobody knows what to fill in.
-!.env.example
-
-# vercel
-.vercel
+# editors — can hold local paths, tokens and per-machine config
+.vscode/*
+!.vscode/extensions.json
+.idea
+*.swp
+*.swo
 
 # typescript
 *.tsbuildinfo

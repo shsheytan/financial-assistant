@@ -60,9 +60,21 @@ export async function updateSession(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   if (!user && !isPublicPath(pathname)) {
+    // An API route must answer with a status the caller can act on. Redirecting
+    // a fetch() to /login returns 200 + an HTML page, which client code parses
+    // as a successful response and then fails on in a confusing place.
+    if (pathname.startsWith("/api/")) {
+      return NextResponse.json(
+        { error: "unauthorized" },
+        { status: 401, headers: { "cache-control": "no-store" } },
+      );
+    }
+
     const url = request.nextUrl.clone();
     url.pathname = "/login";
-    // Send them back where they were headed once they sign in.
+    // Send them back where they were headed once they sign in. Only a relative
+    // in-app path — never echo an absolute URL into this, or it becomes an open
+    // redirect that lets a phishing link bounce off our own domain.
     url.searchParams.set("next", pathname);
     return NextResponse.redirect(url);
   }

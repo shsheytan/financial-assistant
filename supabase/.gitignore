@@ -1,0 +1,10 @@
+# Written by the Supabase CLI. `supabase link` stores the linked project ref,
+# the pooler connection URL and other per-developer state here. None of it
+# belongs in a public repo.
+.branches
+.temp
+.env
+.env.local
+
+# Local signing keys, if ever generated (config.toml references this path).
+signing_keys.json

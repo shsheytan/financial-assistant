@@ -6,3 +6,14 @@ allowBuilds:
   # Google Gen AI SDK and its protobuf dependency.
   "@google/genai": true
   protobufjs: true
+
+# Force patched versions of transitive dependencies that Next pins below the
+# fixed release. Re-check these on every Next upgrade and drop the override
+# once upstream catches up.
+overrides:
+  # next pins 8.4.31, which carries four advisories (sourceMappingURL path
+  # traversal / arbitrary .map disclosure, and a <style> escaping XSS).
+  postcss: ">=8.5.26"
+  # next pins 0.34.5; libvips CVE-2026-33327/33328/35590/35591. This one
+  # matters here — the app processes user-uploaded receipt photos.
+  sharp: ">=0.35.3"

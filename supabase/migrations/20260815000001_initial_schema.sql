@@ -32,7 +32,12 @@ $$;
 -- ----------------------------------------------------------------------------
 create table public.profiles (
   id uuid primary key references auth.users (id) on delete cascade,
-  full_name text,
+
+  -- Bounded because this arrives from signup metadata, which is entirely
+  -- user-controlled. Unbounded text here lets anyone with an account store
+  -- megabytes in a column we render on every screen.
+  full_name text check (full_name is null or char_length(full_name) <= 120),
+
   country_code text check (country_code is null or char_length(country_code) = 2),
   timezone text not null default 'America/Toronto',
   base_currency text not null default 'CAD'
@@ -85,7 +90,16 @@ begin
   insert into public.profiles (id, full_name)
   values (
     new.id,
-    coalesce(new.raw_user_meta_data ->> 'full_name', new.raw_user_meta_data ->> 'name')
+    -- Truncated, not rejected: raw_user_meta_data is attacker-controlled, and
+    -- a CHECK violation here would abort the whole signup transaction and make
+    -- account creation fail on a name that is merely too long.
+    left(
+      coalesce(
+        new.raw_user_meta_data ->> 'full_name',
+        new.raw_user_meta_data ->> 'name'
+      ),
+      120
+    )
   )
   on conflict (id) do nothing;
   return new;
@@ -102,8 +116,8 @@ create trigger on_auth_user_created
 create table public.categories (
   id uuid primary key default gen_random_uuid(),
   user_id uuid references auth.users (id) on delete cascade,
-  name_fa text not null,
-  slug text not null,
+  name_fa text not null check (char_length(name_fa) between 1 and 60),
+  slug text not null check (slug ~ '^[a-z0-9_]{1,40}$'),
   kind text not null default 'expense' check (kind in ('expense', 'income')),
   icon text,
   color text,
@@ -136,7 +150,7 @@ create trigger categories_set_updated_at
 create table public.income_sources (
   id uuid primary key default gen_random_uuid(),
   user_id uuid not null references auth.users (id) on delete cascade,
-  title text not null,
+  title text not null check (char_length(title) between 1 and 120),
   type text not null check (type in (
     'salary', 'freelance', 'business', 'investment', 'rental', 'pension', 'other'
   )),
@@ -168,7 +182,7 @@ create trigger income_sources_set_updated_at
 create table public.recurring_expenses (
   id uuid primary key default gen_random_uuid(),
   user_id uuid not null references auth.users (id) on delete cascade,
-  title text not null,
+  title text not null check (char_length(title) between 1 and 120),
   category_id uuid references public.categories (id) on delete set null,
   amount bigint not null check (amount > 0),
   currency text not null check (currency in ('CAD', 'USD', 'EUR', 'GBP', 'AUD')),
@@ -194,12 +208,14 @@ create table public.media_assets (
   id uuid primary key default gen_random_uuid(),
   user_id uuid not null references auth.users (id) on delete cascade,
   kind text not null check (kind in ('audio', 'image')),
-  storage_path text not null,
-  mime_type text not null,
+  storage_path text not null check (char_length(storage_path) <= 400),
+  mime_type text not null check (char_length(mime_type) <= 100),
   size_bytes int not null check (size_bytes > 0),
   status text not null default 'uploaded'
     check (status in ('uploaded', 'processing', 'parsed', 'failed')),
-  transcript text,
+  -- 60s of speech is well under this; the cap stops a malformed STT response
+  -- from writing an unbounded blob.
+  transcript text check (transcript is null or char_length(transcript) <= 8000),
   extracted jsonb,
   error_message text,
   created_at timestamptz not null default now(),
@@ -227,8 +243,10 @@ create table public.transactions (
   currency text not null check (currency in ('CAD', 'USD', 'EUR', 'GBP', 'AUD')),
 
   category_id uuid references public.categories (id) on delete set null,
-  merchant text,
-  note text,
+  -- Both can arrive straight from a model's output; bound them at the DB so a
+  -- prompt-injected receipt cannot write an essay into the row.
+  merchant text check (merchant is null or char_length(merchant) <= 120),
+  note text check (note is null or char_length(note) <= 500),
   occurred_on date not null,
 
   source text not null default 'form'
@@ -282,7 +300,7 @@ comment on column public.transactions.posted_month is
 create table public.goals (
   id uuid primary key default gen_random_uuid(),
   user_id uuid not null references auth.users (id) on delete cascade,
-  title text not null,
+  title text not null check (char_length(title) between 1 and 120),
   type text not null check (type in (
     'emergency_fund', 'home', 'travel', 'debt_payoff', 'education', 'investment', 'other'
   )),
