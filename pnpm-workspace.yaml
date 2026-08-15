@@ -1,0 +1,8 @@
+allowBuilds:
+  # Next.js image optimization — needs its native binary built on install.
+  sharp: true
+  # ESLint module resolver — native binding.
+  unrs-resolver: true
+  # Google Gen AI SDK and its protobuf dependency.
+  "@google/genai": true
+  protobufjs: true
