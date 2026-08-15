@@ -77,6 +77,6 @@ jobs:
       # Second line of defence behind GitHub's own push protection: catches a
       # credential committed in any historical commit, not just the pushed one.
       - name: Scan full history for secrets
-        uses: gitleaks/gitleaks-action@v2
+        uses: gitleaks/gitleaks-action@v3
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
